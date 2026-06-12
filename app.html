@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>KofiLabs</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Instrument+Serif:ital@0;1&display=swap" rel="stylesheet">
+<style>
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:      #0c0c0b;
+  --s1:      #141413;
+  --s2:      #1e1e1c;
+  --s3:      #272724;
+  --b1:      rgba(255,255,255,0.06);
+  --b2:      rgba(255,255,255,0.11);
+  --b3:      rgba(255,255,255,0.2);
+  --tx:      #edeae2;
+  --t2:      #a09d96;
+  --t3:      #65625d;
+  --green:   #4ade80;
+  --gbg:     rgba(74,222,128,0.07);
+  --gbd:     rgba(74,222,128,0.18);
+  --red:     #f87171;
+  --rbg:     rgba(248,113,113,0.07);
+  --rbd:     rgba(248,113,113,0.18);
+  --amber:   #fbbf24;
+  --abg:     rgba(251,191,36,0.07);
+  --abd:     rgba(251,191,36,0.18);
+  --blue:    #60a5fa;
+  --accent:  #c8f5a0;
+  --accdark: #0c0c0b;
+}
+
+html { background: var(--bg); color: var(--tx); font-family: 'DM Mono', monospace; font-size: 13px; }
+body { min-height: 100vh; display: flex; flex-direction: column; align-items: center; justify-content: flex-start; padding: 3rem 1.5rem 5rem; }
+.app { width: 100%; max-width: 520px; }
+
+/* ── Header ── */
+.hd { text-align: center; margin-bottom: 2.5rem; }
+.hd-icon { font-size: 32px; margin-bottom: 12px; }
+.hd h1 { font-family: 'Instrument Serif', serif; font-size: 26px; font-weight: 400; letter-spacing: -0.01em; }
+.hd p  { font-size: 12px; color: var(--t3); margin-top: 5px; }
+
+/* ── Progress ── */
+.progress { display: flex; align-items: center; gap: 0; margin-bottom: 2.5rem; }
+.step-item { display: flex; flex-direction: column; align-items: center; gap: 5px; flex: 1; position: relative; }
+.step-circle {
+  width: 30px; height: 30px; border-radius: 50%;
+  border: 1px solid var(--b2);
+  display: flex; align-items: center; justify-content: center;
+  font-size: 11px; font-weight: 500; color: var(--t3);
+  background: var(--s1);
+  transition: all .3s; z-index: 1;
+}
+.step-circle.active { border-color: var(--accent); color: var(--accent); background: rgba(200,245,160,0.08); }
+.step-circle.done   { border-color: var(--green); background: var(--gbg); color: var(--green); font-size: 14px; }
+.step-label { font-size: 10px; color: var(--t3); letter-spacing: .04em; text-align: center; transition: color .3s; white-space: nowrap; }
+.step-item.active .step-label { color: var(--t2); }
+.step-item.done   .step-label { color: var(--green); }
+.step-line { flex: 1; height: 1px; background: var(--b2); margin-top: -20px; transition: background .3s; }
+.step-line.done { background: var(--green); }
+
+/* ── Card ── */
+.card { background: var(--s1); border: 1px solid var(--b1); border-radius: 16px; padding: 1.75rem; }
+.card-title { font-family: 'Instrument Serif', serif; font-size: 19px; font-weight: 400; margin-bottom: 4px; }
+.card-sub   { font-size: 11px; color: var(--t3); line-height: 1.7; margin-bottom: 1.5rem; }
+
+/* ── Fields ── */
+.field { margin-bottom: 12px; }
+.field label { display: block; font-size: 10px; letter-spacing: .09em; text-transform: uppercase; color: var(--t2); margin-bottom: 5px; }
+.iw { position: relative; }
+.field input {
+  width: 100%; background: var(--s2); border: 1px solid var(--b2); border-radius: 8px;
+  padding: 10px 38px 10px 12px; font-family: 'DM Mono', monospace; font-size: 12px;
+  color: var(--tx); outline: none; transition: border-color .15s; letter-spacing: .02em;
+}
+.field input:focus { border-color: var(--b3); }
+.field input::placeholder { color: var(--t3); }
+.field input.valid { border-color: var(--gbd); }
+.eye { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); background: none; border: none; color: var(--t3); cursor: pointer; font-size: 13px; padding: 2px; line-height: 1; }
+.eye:hover { color: var(--t2); }
+.hint { font-size: 10px; color: var(--t3); margin-top: 4px; line-height: 1.6; }
+.hint a { color: var(--blue); text-decoration: none; }
+.hint a:hover { text-decoration: underline; }
+code { font-family: 'DM Mono', monospace; font-size: 11px; background: var(--s3); padding: 1px 5px; border-radius: 4px; color: var(--t2); }
+
+/* ── Buttons ── */
+.btn-primary {
+  width: 100%; margin-top: 1.25rem; padding: 12px;
+  border-radius: 8px; border: none;
+  background: var(--accent); color: var(--accdark);
+  font-family: 'DM Mono', monospace; font-size: 13px; font-weight: 500;
+  cursor: pointer; transition: opacity .15s, transform .1s; letter-spacing: .02em;
+}
+.btn-primary:hover   { opacity: .88; }
+.btn-primary:active  { transform: scale(.98); }
+.btn-primary:disabled { opacity: .3; cursor: not-allowed; }
+.btn-ghost { background: none; border: 1px solid var(--b2); border-radius: 8px; padding: 9px 16px; font-family: 'DM Mono', monospace; font-size: 12px; color: var(--t2); cursor: pointer; transition: all .15s; }
+.btn-ghost:hover { border-color: var(--b3); color: var(--tx); }
+
+/* ── Alerts ── */
+.alert { padding: 10px 13px; border-radius: 8px; font-size: 12px; line-height: 1.6; margin-top: 12px; display: none; }
+.alert.show { display: block; }
+.alert.err  { background: var(--rbg); border: 1px solid var(--rbd); color: var(--red); }
+.alert.warn { background: var(--abg); border: 1px solid var(--abd); color: var(--amber); }
+.alert.ok   { background: var(--gbg); border: 1px solid var(--gbd); color: var(--green); }
+
+/* ── Info box ── */
+.infobox { background: var(--s2); border: 1px solid var(--b2); border-radius: 10px; padding: 12px 14px; margin-bottom: 14px; font-size: 12px; color: var(--t2); line-height: 1.7; }
+.infobox strong { color: var(--tx); font-weight: 500; }
+.infobox ol { padding-left: 16px; margin-top: 4px; }
+.infobox li { margin-bottom: 3px; }
+
+/* ── OAuth button ── */
+.btn-oauth {
+  width: 100%; margin-top: 8px; padding: 11px 16px;
+  border-radius: 8px; border: 1px solid var(--b2);
+  background: var(--s2); color: var(--tx);
+  font-family: 'DM Mono', monospace; font-size: 12px;
+  cursor: pointer; transition: all .15s;
+  display: flex; align-items: center; justify-content: center; gap: 8px;
+}
+.btn-oauth:hover { background: var(--s3); border-color: var(--b3); }
+.btn-oauth .icon { font-size: 16px; }
+.btn-oauth.connected { border-color: var(--gbd); color: var(--green); background: var(--gbg); }
+
+/* ── Step views ── */
+.view { display: none; animation: fup .3s ease both; }
+.view.show { display: block; }
+
+/* ── Deploy log ── */
+.deploy-log { background: var(--s2); border: 1px solid var(--b2); border-radius: 10px; padding: 12px 14px; margin-top: 14px; font-size: 11px; font-family: 'DM Mono', monospace; line-height: 2; max-height: 200px; overflow-y: auto; display: none; }
+.deploy-log.show { display: block; }
+.log-line { display: flex; gap: 8px; }
+.log-line .licon { flex-shrink: 0; }
+.log-line.ok   .licon { color: var(--green); }
+.log-line.err  .licon { color: var(--red); }
+.log-line.spin .licon { color: var(--amber); animation: spin .8s linear infinite; display: inline-block; }
+.log-line.info .licon { color: var(--t3); }
+
+/* ── Success card ── */
+.success-card { text-align: center; padding: 2rem 1.5rem; }
+.success-icon { font-size: 40px; margin-bottom: 14px; }
+.success-title { font-family: 'Instrument Serif', serif; font-size: 22px; font-weight: 400; margin-bottom: 8px; }
+.success-sub   { font-size: 12px; color: var(--t3); line-height: 1.7; margin-bottom: 1.5rem; }
+.webhook-box { background: var(--s2); border: 1px solid var(--gbd); border-radius: 10px; padding: 12px 14px; margin-bottom: 1rem; }
+.webhook-label { font-size: 10px; color: var(--t3); letter-spacing: .08em; text-transform: uppercase; margin-bottom: 6px; }
+.webhook-url { font-size: 12px; color: var(--blue); word-break: break-all; margin-bottom: 8px; }
+.copy-row { display: flex; gap: 8px; justify-content: center; }
+.btn-copy { background: var(--s3); border: 1px solid var(--b2); border-radius: 6px; padding: 5px 12px; font-family: 'DM Mono', monospace; font-size: 11px; color: var(--t2); cursor: pointer; transition: color .15s; }
+.btn-copy:hover { color: var(--tx); }
+.btn-copy.ok { color: var(--green); border-color: var(--gbd); }
+
+.steps-done { text-align: left; margin-top: 1.25rem; }
+.step-done-item { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--b1); font-size: 12px; }
+.step-done-item:last-child { border: none; }
+.step-done-num { width: 20px; height: 20px; border-radius: 50%; background: var(--gbg); border: 1px solid var(--gbd); color: var(--green); font-size: 10px; display: flex; align-items: center; justify-content: center; flex-shrink: 0; margin-top: 1px; }
+.step-done-body { flex: 1; }
+.step-done-title { font-weight: 500; color: var(--tx); margin-bottom: 2px; }
+.step-done-sub   { font-size: 11px; color: var(--t3); }
+
+@keyframes fup  { from { opacity:0; transform:translateY(8px); } to { opacity:1; transform:translateY(0); } }
+@keyframes spin { to { transform: rotate(360deg); } }
+
+.deploy-log::-webkit-scrollbar { width: 3px; }
+.deploy-log::-webkit-scrollbar-thumb { background: var(--b2); border-radius: 2px; }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <div class="hd">
+    <div class="hd-icon">☕</div>
+    <h1>KofiLabs</h1>
+    <p>Deploy your Ko-fi → Streamlabs relay to Cloudflare in 3 steps</p>
+  </div>
+
+  <div class="progress">
+    <div class="step-item active" id="si-1">
+      <div class="step-circle active" id="sc-1">1</div>
+      <div class="step-label">Cloudflare</div>
+    </div>
+    <div class="step-line" id="sl-1"></div>
+    <div class="step-item" id="si-2">
+      <div class="step-circle" id="sc-2">2</div>
+      <div class="step-label">Streamlabs</div>
+    </div>
+    <div class="step-line" id="sl-2"></div>
+    <div class="step-item" id="si-3">
+      <div class="step-circle" id="sc-3">3</div>
+      <div class="step-label">Ko-fi</div>
+    </div>
+    <div class="step-line" id="sl-3"></div>
+    <div class="step-item" id="si-4">
+      <div class="step-circle" id="sc-4">4</div>
+      <div class="step-label">Deploy</div>
+    </div>
+  </div>
+
+  <div class="view show" id="view-1">
+    <div class="card">
+      <div class="card-title">Connect Cloudflare</div>
+      <div class="card-sub">Your Worker will be deployed to your Cloudflare account — free tier is more than enough.</div>
+
+      <div class="infobox">
+        <strong>Get your API Token:</strong>
+        <ol>
+          <li>Go to <a href="https://dash.cloudflare.com/profile/api-tokens" target="_blank" style="color:var(--blue)">dash.cloudflare.com/profile/api-tokens</a></li>
+          <li>Click <strong>Create Token</strong> → use the <strong>Edit Cloudflare Workers</strong> template</li>
+          <li>In <strong>Account Resources</strong>, select your account</li>
+          <li>In <strong>Zone Resources</strong>, select "All zones"</li>
+          <li>Click <strong>Continue to Summary</strong> → <strong>Create Token</strong></li>
+          <li>Copy the token and paste it below</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label>Cloudflare API Token</label>
+        <div class="iw">
+          <input type="password" id="cf-token" placeholder="Paste your API token here" oninput="chk1()">
+          <button class="eye" onclick="tog('cf-token',this)" tabindex="-1">👁</button>
+        </div>
+        <div class="hint">Needs <code>Workers Scripts:Edit</code> permission. Never sent to any server — used only from your browser.</div>
+      </div>
+
+      <button class="btn-oauth" id="cf-verify-btn" onclick="verifyCF()" disabled>
+        <span class="icon">⚡</span> Verify Cloudflare connection
+      </button>
+
+      <div class="alert err" id="cf-err"></div>
+      <div class="alert ok"  id="cf-ok">Connected! Your Cloudflare account is ready.</div>
+
+      <button class="btn-primary" id="cf-next" disabled onclick="goStep(2)">Continue →</button>
+    </div>
+  </div>
+
+  <div class="view" id="view-2">
+    <div class="card">
+      <div class="card-title">Connect Streamlabs</div>
+      <div class="card-sub">Click below to authorise via Streamlabs. A browser tab will open — log in and click Approve. You'll be brought straight back.</div>
+
+      <button class="btn-oauth" id="sl-oauth-btn" onclick="startSlOAuth()">
+        <span class="icon">🔗</span> Connect Streamlabs account
+      </button>
+
+      <div class="alert err" id="sl-err" style="margin-top:12px"></div>
+      <div class="alert ok" id="sl-ok" style="margin-top:12px"></div>
+
+      <div style="display:flex;gap:8px;margin-top:1.25rem">
+        <button class="btn-ghost" onclick="goStep(1)">← Back</button>
+        <button class="btn-primary" id="sl-next" disabled onclick="goStep(3)" style="margin-top:0;flex:1">Continue →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="view-3">
+    <div class="card">
+      <div class="card-title">Ko-fi verification token</div>
+      <div class="card-sub">Ko-fi signs every webhook with a token so your Worker can verify it's genuine.</div>
+
+      <div class="infobox">
+        <strong>Find your token:</strong>
+        <ol>
+          <li>Go to <a href="https://ko-fi.com/manage/webhooks" target="_blank" style="color:var(--blue)">ko-fi.com/manage/webhooks</a></li>
+          <li>Extend the <strong>Advanced</strong> tab and copy the <strong>Verification Token</strong> shown on that page</li>
+          <li>You'll paste your Worker URL back here after deploy</li>
+        </ol>
+      </div>
+
+      <div class="field">
+        <label>Ko-fi Verification Token</label>
+        <div class="iw">
+          <input type="password" id="kf-token" placeholder="Paste from Ko-fi webhooks page" oninput="chk3()">
+          <button class="eye" onclick="tog('kf-token',this)" tabindex="-1">👁</button>
+        </div>
+        <div class="hint">This gets stored as an encrypted Worker secret. Ko-fi will reject webhooks if they don't match.</div>
+      </div>
+
+      <div class="field">
+        <label>Worker name <span style="color:var(--t3);font-size:10px"></span></label>
+        <input type="text" id="worker-name" placeholder="kofilabs-relay" value="kofilabs-relay" style="padding-right:12px" disabled>
+        <div class="hint">The name your Worker appears as in Cloudflare dashboard.</div>
+      </div>
+
+      <div class="alert err" id="kf-err"></div>
+
+      <div style="display:flex;gap:8px;margin-top:1.25rem">
+        <button class="btn-ghost" onclick="goStep(2)">← Back</button>
+        <button class="btn-primary" id="kf-next" disabled onclick="goStep(4)" style="margin-top:0;flex:1">Deploy Worker →</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="view" id="view-4">
+    <div class="card">
+      <div class="card-title">Deploying your Worker</div>
+      <div class="card-sub">Uploading the relay script to Cloudflare and setting your secrets...</div>
+
+      <div class="deploy-log show" id="deploy-log"></div>
+      <div class="alert err" id="deploy-err"></div>
+    </div>
+  </div>
+
+  <div class="view" id="view-success">
+    <div class="card success-card">
+      <div class="success-icon">🎉</div>
+      <div class="success-title">Relay is live!</div>
+      <div class="success-sub">Your Cloudflare Worker is deployed and running. Paste the webhook URL into Ko-fi to complete setup.</div>
+
+      <div class="webhook-box">
+        <div class="webhook-label">Your webhook URL</div>
+        <div class="webhook-url" id="final-url">—</div>
+        <div class="copy-row">
+          <button class="btn-copy" id="copy-btn" onclick="copyUrl()">Copy URL</button>
+          <a id="kofi-link" href="https://ko-fi.com/manage/webhooks" target="_blank" style="text-decoration:none">
+            <button class="btn-copy">Open Ko-fi Webhooks →</button>
+          </a>
+        </div>
+      </div>
+
+      <div class="steps-done">
+        <div class="step-done-item">
+          <div class="step-done-num">✓</div>
+          <div class="step-done-body">
+            <div class="step-done-title">Worker deployed</div>
+            <div class="step-done-sub" id="sd-worker">—</div>
+          </div>
+        </div>
+        <div class="step-done-item">
+          <div class="step-done-num">✓</div>
+          <div class="step-done-body">
+            <div class="step-done-title">Secrets stored</div>
+            <div class="step-done-sub">Streamlabs token + Ko-fi token encrypted in Cloudflare</div>
+          </div>
+        </div>
+        <div class="step-done-item">
+          <div class="step-done-num">2</div>
+          <div class="step-done-body">
+            <div class="step-done-title">Paste webhook URL into Ko-fi</div>
+            <div class="step-done-sub">Ko-fi → More → API/Webhooks → paste the URL above</div>
+          </div>
+        </div>
+      </div>
+
+      <button class="btn-primary" style="margin-top:1.5rem" onclick="window.open('https://ko-fi.com/manage/webhooks','_blank')">
+        Open Ko-fi to finish setup →
+      </button>
+    </div>
+  </div>
+
+</div>
+
+<script>
+// ── State ─────────────────────────────────────────────────────────────
+const S = { cfToken:'', cfAccount:'', slToken:'', kfToken:'', workerName:'kofilabs-relay', cfVerified:false };
+
+// ── Helpers ───────────────────────────────────────────────────────────
+function tog(id, btn) {
+  const el = document.getElementById(id);
+  el.type = el.type==='password' ? 'text' : 'password';
+  btn.textContent = el.type==='password' ? '👁' : '🙈';
+}
+
+function showAlert(id, msg) {
+  const el = document.getElementById(id);
+  if (msg) { el.textContent = msg; el.classList.add('show'); }
+  else el.classList.remove('show');
+}
+
+function goStep(n) {
+  [1,2,3,4,'success'].forEach(s => {
+    const v = document.getElementById(`view-${s}`);
+    if (v) v.classList.remove('show');
+  });
+  document.getElementById(`view-${n}`).classList.add('show');
+  updateProgress(n);
+  if (n===4) deploy();
+}
+
+function updateProgress(step) {
+  for (let i=1; i<=4; i++) {
+    const si = document.getElementById(`si-${i}`);
+    const sc = document.getElementById(`sc-${i}`);
+    si.classList.remove('active','done');
+    sc.classList.remove('active','done');
+    if (i < step)      { si.classList.add('done');   sc.classList.add('done');   sc.textContent='✓'; }
+    else if (i===step) { si.classList.add('active');  sc.classList.add('active'); }
+    else { sc.textContent = i; }
+  }
+  for (let i=1; i<=3; i++) {
+    document.getElementById(`sl-${i}`).classList.toggle('done', i < step);
+  }
+}
+
+// ── Step 1 checks ─────────────────────────────────────────────────────
+function chk1() {
+  const t = document.getElementById('cf-token').value.trim();
+  document.getElementById('cf-verify-btn').disabled = !t;
+  document.getElementById('cf-next').disabled = !S.cfVerified;
+}
+
+async function verifyCF() {
+  const btn = document.getElementById('cf-verify-btn');
+  const token = document.getElementById('cf-token').value.trim();
+  showAlert('cf-err',''); showAlert('cf-ok','');
+  btn.disabled = true; btn.innerHTML = '<span class="icon">⏳</span> Verifying...';
+
+  try {
+    const r = await fetch('/api/cf/verify', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ token })
+    });
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+    S.cfToken = token;
+    S.cfAccount = d.accountId;
+    S.cfAccountName = d.accountName;
+    S.cfVerified = true;
+    showAlert('cf-ok', `✓ Connected as "${S.cfAccountName}" — ready to deploy.`);
+    document.getElementById('cf-next').disabled = false;
+    btn.innerHTML = '<span class="icon">✓</span> Connected';
+    btn.classList.add('connected');
+  } catch(e) {
+    showAlert('cf-err', 'Connection failed: ' + e.message);
+    btn.disabled = false; btn.innerHTML = '<span class="icon">⚡</span> Verify Cloudflare connection';
+  }
+}
+
+// ── Step 2: Streamlabs OAuth ──────────────────────────────────────────
+function startSlOAuth() {
+  const btn = document.getElementById('sl-oauth-btn');
+  btn.innerHTML = '<span class="icon">⏳</span> Waiting for authorisation...';
+  btn.disabled = true;
+  showAlert('sl-err', '');
+
+  // Open OAuth in a new tab
+  window.open('/api/sl/oauth/start', '_blank');
+
+  // Poll for the token (server stores it after callback)
+  const poll = setInterval(async () => {
+    try {
+      const r = await fetch('/api/sl/oauth/token');
+      const d = await r.json();
+      if (d.token) {
+        clearInterval(poll);
+        S.slToken = d.token;
+        btn.innerHTML = '<span class="icon">✓</span> Streamlabs connected';
+        btn.classList.add('connected');
+        showAlert('sl-ok', `✓ Connected as "${d.displayName}"`);
+        document.getElementById('sl-next').disabled = false;
+      }
+    } catch {}
+  }, 1500);
+
+  // Stop polling after 5 min
+  setTimeout(() => {
+    clearInterval(poll);
+    if (!S.slToken) {
+      btn.innerHTML = '<span class="icon">🔗</span> Connect Streamlabs account';
+      btn.disabled = false;
+      showAlert('sl-err', 'Timed out. Please try again.');
+    }
+  }, 300000);
+}
+
+// ── Step 3 checks ─────────────────────────────────────────────────────
+function chk3() {
+  const v = document.getElementById('kf-token').value.trim();
+  const n = document.getElementById('worker-name').value.trim();
+  document.getElementById('kf-next').disabled = !v;
+  if (v) S.kfToken = v;
+  if (n) S.workerName = n;
+}
+
+// ── Worker script ─────────────────────────────────────────────────────
+function workerScript() {
+  return `const SUPPORTED_CURRENCIES=["AUD","BRL","CAD","CZK","DKK","EUR","HKD","ILS","MYR","MXN","NOK","NZD","PHP","PLN","GBP","RUB","SGD","SEK","CHF","THB","TRY","USD"];
+
+export default {
+  async fetch(request, env) {
+    if (request.method !== "POST") {
+      return new Response("Ko-fi Relay is running.", { status: 200 });
+    }
+    let kofi;
+    try {
+      const form = await request.formData();
+      kofi = JSON.parse(form.get("data") || "{}");
+    } catch {
+      return new Response("Bad payload", { status: 400 });
+    }
+    if (kofi.verification_token !== env.KOFI_VERIFICATION_TOKEN) {
+      return new Response("Unauthorized", { status: 401 });
+    }
+    let currency = (kofi.currency || "USD").toUpperCase();
+    if (!SUPPORTED_CURRENCIES.includes(currency)) currency = "USD";
+    const params = new URLSearchParams({
+      name: (kofi.from_name || "Anonymous").slice(0, 25),
+      identifier: kofi.email || kofi.kofi_transaction_id || ("kofi-" + Date.now()),
+      message: (kofi.message || "").slice(0, 255),
+      amount: kofi.amount || "0",
+      currency,
+    });
+    const res = await fetch("https://streamlabs.com/api/v2.0/donations", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+        "Authorization": "Bearer " + env.STREAMLABS_ACCESS_TOKEN,
+      },
+      body: params,
+    });
+    if (!res.ok) console.error("Streamlabs error", res.status, await res.text());
+    return new Response("OK", { status: 200 });
+  }
+};`;
+}
+
+// ── Deploy ────────────────────────────────────────────────────────────
+let logLines = [];
+function addLog(type, msg) {
+  const icons = { ok:'✓', err:'✗', spin:'◌', info:'·' };
+  logLines.push({ type, msg });
+  document.getElementById('deploy-log').innerHTML = logLines.map(l =>
+    `<div class="log-line ${l.type}"><span class="licon">${icons[l.type]||'·'}</span><span>${l.msg}</span></div>`
+  ).join('');
+}
+
+async function deploy() {
+  logLines = [];
+  showAlert('deploy-err','');
+  const workerName = document.getElementById('worker-name').value.trim() || 'kofi-streamlabs-relay';
+  S.workerName = workerName;
+
+  const post = (path, body) => fetch(path, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(body)
+  }).then(async r => {
+    const d = await r.json();
+    if (!r.ok) throw new Error(d.error || `Error ${r.status}`);
+    return d;
+  });
+
+  try {
+    // 1. Upload script
+    addLog('spin', 'Uploading Worker script...');
+    await post('/api/cf/deploy', { token: S.cfToken, accountId: S.cfAccount, workerName, script: workerScript() });
+    logLines[logLines.length-1] = { type:'ok', msg:'Worker script uploaded' };
+
+    // 2. Set Streamlabs secret
+    addLog('spin', 'Setting Streamlabs secret...');
+    await post('/api/cf/secret', { token: S.cfToken, accountId: S.cfAccount, workerName, name: 'STREAMLABS_ACCESS_TOKEN', value: S.slToken });
+    logLines[logLines.length-1] = { type:'ok', msg:'Streamlabs token stored as secret' };
+
+    // 3. Set Ko-fi secret
+    addLog('spin', 'Setting Ko-fi verification token...');
+    await post('/api/cf/secret', { token: S.cfToken, accountId: S.cfAccount, workerName, name: 'KOFI_VERIFICATION_TOKEN', value: S.kfToken });
+    logLines[logLines.length-1] = { type:'ok', msg:'Ko-fi token stored as secret' };
+
+    // 4. Activate route
+    addLog('spin', 'Activating Worker URL...');
+    await post('/api/cf/enable-route', { token: S.cfToken, accountId: S.cfAccount, workerName });
+    logLines[logLines.length-1] = { type:'ok', msg:'Worker URL activated' };
+
+    // 5. Get subdomain
+    addLog('spin', 'Fetching Worker URL...');
+    const sub = await post('/api/cf/subdomain', { token: S.cfToken, accountId: S.cfAccount });
+    logLines[logLines.length-1] = { type:'ok', msg:'Worker is live' };
+    addLog('ok', 'All done!');
+
+    renderLog();
+
+    const workerUrl = sub.subdomain
+      ? `https://${workerName}.${sub.subdomain}.workers.dev`
+      : `https://${workerName}.<your-subdomain>.workers.dev`;
+
+    document.getElementById('final-url').textContent = workerUrl;
+    document.getElementById('sd-worker').textContent = `${workerName}.workers.dev`;
+    updateProgress(5);
+
+    setTimeout(() => {
+      document.getElementById('view-4').classList.remove('show');
+      document.getElementById('view-success').classList.add('show');
+    }, 600);
+
+  } catch(e) {
+    if (logLines.length) logLines[logLines.length-1].type = 'err';
+    renderLog();
+    showAlert('deploy-err', '✗ Deploy failed: ' + e.message);
+  }
+}
+
+function renderLog() {
+  const icons = { ok:'✓', err:'✗', spin:'◌', info:'·' };
+  document.getElementById('deploy-log').innerHTML = logLines.map(l =>
+    `<div class="log-line ${l.type}"><span class="licon">${icons[l.type]||'·'}</span><span>${l.msg}</span></div>`
+  ).join('');
+}
+
+function copyUrl() {
+  const url = document.getElementById('final-url').textContent;
+  navigator.clipboard.writeText(url);
+  const btn = document.getElementById('copy-btn');
+  btn.textContent = 'Copied!'; btn.classList.add('ok');
+  setTimeout(() => { btn.textContent = 'Copy URL'; btn.classList.remove('ok'); }, 1500);
+}
+</script>
+</body>
+</html>
