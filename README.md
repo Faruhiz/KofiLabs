@@ -46,6 +46,8 @@ KofiLabs provides a clean, local UI that automates the deployment of a **Cloudfl
 
 ---
 
+# **DO NOT SHARE YOUR TOKEN TO ANYONE**
+
 ## 💻 Running from Source
 
 If you prefer to audit the code and run the setup wizard yourself via Node.js instead of using the pre-compiled executable:
