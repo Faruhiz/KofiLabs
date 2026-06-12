@@ -15,7 +15,7 @@ call npm install -g pkg
 
 echo.
 echo  Building exe...
-pkg server-bundled.js --target node18-win-x64 --output KofiLabs.exe
+pkg server.js --target node18-win-x64 --output KofiLabs.exe
 
 echo.
 echo  Done! KofiLabs.exe is ready.
