@@ -267,9 +267,9 @@ server.listen(PORT, () => {
 
   const url = `http://localhost:${PORT}`;
 
-  const command = `start ${url}`;
+  const command = `explorer ${url}`;
 
   exec(command, (err) => {
-        if (err) console.error('Failed to open browser:', err);
+        if (err) return;
     });
 });
