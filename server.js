@@ -3,6 +3,8 @@ const https = require('https');
 const fs    = require('fs');
 const path  = require('path');
 
+const { exec } = require('child_process');
+
 // Read the HTML file once when the server starts
 const INDEX_HTML = fs.readFileSync(path.join(__dirname, 'app.html'), 'utf8');
 
@@ -262,4 +264,12 @@ server.listen(PORT, () => {
   console.log('  KofiLabs Setup');
   console.log(`  Open: http://localhost:${PORT}`);
   console.log('');
+
+  const url = `http://localhost:${PORT}`;
+
+  const command = `start ${url}`;
+
+  exec(command, (err) => {
+        if (err) console.error('Failed to open browser:', err);
+    });
 });
