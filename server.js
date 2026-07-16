@@ -256,6 +256,38 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  // Get User details from Cloudflare
+  if (url === '/api/cf/user') {
+    const { token } = body;
+    if (!token) return jsonRes(res, 400, { error: 'Missing fields' });
+    try {
+      const r = await cfRequest('GET', `/user`, token);
+      if (r.status !== 200) {
+        return jsonRes(res, 400, { error: r.body?.errors?.[0]?.message || `CF error ${r.status}` });
+      }
+      return jsonRes(res, 200, { email: r.body.result.email });
+    } catch(e) { 
+      return jsonRes(res, 500, { error: e.message }); 
+    }
+  }
+
+  // Generate and set a new workers.dev subdomain if the user doesn't have one
+  if (url === '/api/cf/set-subdomain') {
+    const { token, accountId, subdomain } = body;
+    if (!token || !accountId || !subdomain) return jsonRes(res, 400, { error: 'Missing fields' });
+    
+    try {
+      const r = await cfRequest('PUT', `/accounts/${accountId}/workers/subdomain`, token, { subdomain });
+      
+      if (r.status !== 200 && r.status !== 201) {
+        return jsonRes(res, 400, { error: r.body?.errors?.[0]?.message || `CF error ${r.status}` });
+      }
+      return jsonRes(res, 200, { subdomain: r.body.result.subdomain });
+    } catch(e) { 
+      return jsonRes(res, 500, { error: e.message }); 
+    }
+  }
+
   res.writeHead(404); res.end('Not found');
 });
 

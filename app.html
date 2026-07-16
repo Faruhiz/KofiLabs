@@ -531,8 +531,13 @@ function addLog(type, msg) {
 async function deploy() {
   logLines = [];
   showAlert('deploy-err','');
-  const workerName = document.getElementById('worker-name').value.trim() || 'kofi-streamlabs-relay';
+  
+  const baseName = document.getElementById('worker-name').value.trim() || 'kofi-streamlabs-relay';
+  const randomId = Math.floor(Math.random() * 90000) + 10000;
+  const workerName = `${baseName}-${randomId}`; // e.g., kofi-streamlabs-relay-83921
   S.workerName = workerName;
+
+  let sub;
 
   const post = (path, body) => fetch(path, {
     method: 'POST',
@@ -545,37 +550,70 @@ async function deploy() {
   });
 
   try {
-    // 1. Upload script
+    // Upload script
     addLog('spin', 'Uploading Worker script...');
     await post('/api/cf/deploy', { token: S.cfToken, accountId: S.cfAccount, workerName, script: workerScript() });
     logLines[logLines.length-1] = { type:'ok', msg:'Worker script uploaded' };
 
-    // 2. Set Streamlabs secret
+    // Set Streamlabs secret
     addLog('spin', 'Setting Streamlabs secret...');
     await post('/api/cf/secret', { token: S.cfToken, accountId: S.cfAccount, workerName, name: 'STREAMLABS_ACCESS_TOKEN', value: S.slToken });
     logLines[logLines.length-1] = { type:'ok', msg:'Streamlabs token stored as secret' };
 
-    // 3. Set Ko-fi secret
+    // Set Ko-fi secret
     addLog('spin', 'Setting Ko-fi verification token...');
     await post('/api/cf/secret', { token: S.cfToken, accountId: S.cfAccount, workerName, name: 'KOFI_VERIFICATION_TOKEN', value: S.kfToken });
     logLines[logLines.length-1] = { type:'ok', msg:'Ko-fi token stored as secret' };
 
-    // 4. Activate route
+    // Activate route
     addLog('spin', 'Activating Worker URL...');
     await post('/api/cf/enable-route', { token: S.cfToken, accountId: S.cfAccount, workerName });
     logLines[logLines.length-1] = { type:'ok', msg:'Worker URL activated' };
 
-    // 5. Get subdomain
+    // Get subdomain
     addLog('spin', 'Fetching Worker URL...');
-    const sub = await post('/api/cf/subdomain', { token: S.cfToken, accountId: S.cfAccount });
-    logLines[logLines.length-1] = { type:'ok', msg:'Worker is live' };
-    addLog('ok', 'All done!');
+    sub = await post('/api/cf/subdomain', { token: S.cfToken, accountId: S.cfAccount });
 
+    // Check if it returned null/undefined
+    if (!sub.subdomain) {
+      addLog('spin', 'No subdomain found. Generating one automatically...');
+      
+      let baseName = 'kofilabs'; // Fallback name
+
+      try {
+        // Try to fetch their email from Cloudflare
+        const userRes = await post('/api/cf/user', { token: S.cfToken });
+        if (userRes && userRes.email) {
+          // Sanitize the email: "xxx.yyy@zzz.com" -> "xxx-yyy-zzz-com"
+          baseName = userRes.email.toLowerCase()
+            .replace(/[^a-z0-9]/g, '-') // Replace symbols with hyphens
+            .replace(/-+/g, '-')        // Remove double hyphens
+            .replace(/^-|-$/g, '');     // Remove leading/trailing hyphens
+        }
+      } catch (err) {
+        // If the API token doesn't have User:Read permissions, we just silently ignore it
+        // and stick with the 'kofilabs' fallback name.
+        console.log("Could not fetch email, using fallback name.");
+      }
+      
+      // Call our new API endpoint to register it
+      sub = await post('/api/cf/set-subdomain', { 
+        token: S.cfToken, 
+        accountId: S.cfAccount, 
+        subdomain: baseName 
+      });
+      
+      logLines[logLines.length-1] = { type:'ok', msg:`Registered subdomain: ${sub.subdomain}.workers.dev` };
+    } else {
+      logLines[logLines.length-1] = { type:'ok', msg:'Worker URL fetched' };
+    }
+
+    addLog('ok', 'All done!');
     renderLog();
 
     const workerUrl = sub.subdomain
       ? `https://${workerName}.${sub.subdomain}.workers.dev`
-      : `https://${workerName}.<your-subdomain>.workers.dev`;
+      : `ERROR - NO SUBDOMAIN RETURNED; PLEASE REPORT THIS ISSUE ON GITHUB`;
 
     document.getElementById('final-url').textContent = workerUrl;
     document.getElementById('sd-worker').textContent = `${workerName}.workers.dev`;
