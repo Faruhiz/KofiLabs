@@ -288,6 +288,31 @@ const server = http.createServer(async (req, res) => {
     }
   }
 
+  // Check for existing Workers
+  if (url === '/api/cf/check-worker') {
+    const { token, accountId, baseName } = body;
+    if (!token || !accountId || !baseName) return jsonRes(res, 400, { error: 'Missing fields' });
+    
+    try {
+      const r = await cfRequest('GET', `/accounts/${accountId}/workers/scripts`, token);
+      if (r.status !== 200) {
+        return jsonRes(res, 400, { error: r.body?.errors?.[0]?.message || `CF error ${r.status}` });
+      }
+      
+      const workers = r.body.result;
+      
+      // Check if they already have a worker (e.g., kofilabs-relay-12345)
+      const existingWorker = workers.find(w => w.id.startsWith(baseName + '-'));
+      
+      return jsonRes(res, 200, { 
+        existingWorker: existingWorker ? existingWorker.id : null 
+      });
+      
+    } catch(e) { 
+      return jsonRes(res, 500, { error: e.message }); 
+    }
+  }
+
   res.writeHead(404); res.end('Not found');
 });
 

@@ -495,6 +495,23 @@ export default {
       return new Response("Unauthorized", { status: 401 });
     }
     let currency = (kofi.currency || "USD").toUpperCase();
+
+    // --- NAME FORMATTING LOGIC ---
+    let rawName = kofi.from_name || "Anonymous";
+    
+    // 1. Remove special characters (keeps letters, numbers, and spaces)
+    // Use \\p{L} to safely preserve non-English characters like Thai alphabets
+    let cleanName = rawName.replace(/[^\\p{L}\\p{N}\\s]/gu, "").trim();
+    
+    // Fallback just in case someone's name was 100% emojis/symbols
+    if (!cleanName) cleanName = "Anonymous";
+    
+    // 2. If the name is exactly 1 character long, add "xxx"
+    if (cleanName.length === 1) {
+      cleanName += "xxx";
+    }
+    // ------------------------------
+
     if (!SUPPORTED_CURRENCIES.includes(currency)) currency = "USD";
     const params = new URLSearchParams({
       name: (kofi.from_name || "Anonymous").slice(0, 25),
@@ -533,9 +550,6 @@ async function deploy() {
   showAlert('deploy-err','');
   
   const baseName = document.getElementById('worker-name').value.trim() || 'kofi-streamlabs-relay';
-  const randomId = Math.floor(Math.random() * 90000) + 10000;
-  const workerName = `${baseName}-${randomId}`; // e.g., kofi-streamlabs-relay-83921
-  S.workerName = workerName;
 
   let sub;
 
@@ -550,6 +564,23 @@ async function deploy() {
   });
 
   try {
+    // Check for existing setups
+    addLog('spin', 'Checking for existing setups...');
+    const checkRes = await post('/api/cf/check-worker', { token: S.cfToken, accountId: S.cfAccount, baseName });
+
+    if (checkRes.existingWorker) {
+      // SCENARIO 1: Already have a setup.
+      workerName = checkRes.existingWorker;
+      logLines[logLines.length-1] = { type:'ok', msg:`Found existing setup: ${workerName}. Updating...` };
+    } else {
+      // SCENARIO 2: No existing setup found. Generate a new one.
+      workerName = `${baseName}-${Math.floor(Math.random() * 90000) + 10000}`;
+      logLines[logLines.length-1] = { type:'ok', msg:`Creating new setup: ${workerName}` };
+    }
+
+    S.workerName = workerName;
+    renderLog();
+
     // Upload script
     addLog('spin', 'Uploading Worker script...');
     await post('/api/cf/deploy', { token: S.cfToken, accountId: S.cfAccount, workerName, script: workerScript() });
