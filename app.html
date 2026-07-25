@@ -514,7 +514,7 @@ export default {
 
     if (!SUPPORTED_CURRENCIES.includes(currency)) currency = "USD";
     const params = new URLSearchParams({
-      name: (kofi.from_name || "Anonymous").slice(0, 25),
+      name: (cleanName || "Anonymous").slice(0, 25),
       identifier: kofi.email || kofi.kofi_transaction_id || ("kofi-" + Date.now()),
       message: (kofi.message || "").slice(0, 255),
       amount: kofi.amount || "0",
