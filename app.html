@@ -501,7 +501,7 @@ export default {
     
     // 1. Remove special characters (keeps letters, numbers, and spaces)
     // Use \\p{L} to safely preserve non-English characters like Thai alphabets
-    let cleanName = rawName.replace(/[^\p{L}\p{M}\p{N}\s]/gu, "").trim();
+    let cleanName = rawName.replace(/[^a-zA-Z0-9 _-]/g, "").trim();
     
     // Fallback just in case someone's name was 100% emojis/symbols
     if (!cleanName) cleanName = "Anonymous";
