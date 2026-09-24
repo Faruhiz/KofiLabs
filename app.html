@@ -507,7 +507,7 @@ export default {
     if (!cleanName) cleanName = "Anonymous";
     
     // 2. If the name is exactly 1 character long, add "xxx"
-    if (cleanName.length === 1) {
+    if (cleanName.length === 1 && cleanName !== "Anonymous") {
       cleanName += "xxx";
     }
     // ------------------------------
