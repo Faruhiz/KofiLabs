@@ -512,6 +512,15 @@ export default {
     }
     // ------------------------------
 
+    // --- MESSAGE BYTE-LIMIT ---
+    let safeMessage = kofi.message || "";
+    const encoder = new TextEncoder();
+    
+    // Streamlabs rejects the whole alert if the message exceeds ~255 bytes.
+    while (encoder.encode(safeMessage).length > 250) {
+      safeMessage = safeMessage.slice(0, -1);
+    }
+
     if (!SUPPORTED_CURRENCIES.includes(currency)) currency = "USD";
     const params = new URLSearchParams({
       name: (cleanName || "Anonymous").slice(0, 25),
