@@ -525,7 +525,7 @@ export default {
     const params = new URLSearchParams({
       name: (cleanName || "Anonymous").slice(0, 25),
       identifier: kofi.email || kofi.kofi_transaction_id || ("kofi-" + Date.now()),
-      message: (kofi.message || "").slice(0, 255),
+      message: safeMessage,
       amount: kofi.amount || "0",
       currency,
     });
